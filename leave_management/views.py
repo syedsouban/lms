@@ -52,9 +52,20 @@ class LeaveApplicationView(APIView):
         if not request_serializer.is_valid():
             return Response(request_serializer.errors, status=400)
         leave_id = request.query_params.get("leave_id")
+        old_status = EmployeeLeaveApplication.objects.get(pk = leave_id).status
         status = request.query_params.get("status")
         res = EmployeeLeaveApplication.objects.filter(pk = leave_id).update(status = status)
         if res:
+            leave = EmployeeLeaveApplication.objects.get(pk = leave_id)
+            leave_duration = (leave.end_date - leave.start_date).days
+                
+            if status == "Approved":
+                updated_balance = F("current_balance")-leave_duration
+                EmployeeLeaveBalance.objects.filter(employee = leave.employee, leave_type = leave.leave_type).update(previous_balance = F("current_balance"),current_balance = updated_balance)
+            if old_status == "Approved" and (status == "Cancelled" or status == "Rejected"):
+                updated_balance = F("current_balance")+leave_duration
+                EmployeeLeaveBalance.objects.filter(employee = leave.employee, leave_type = leave.leave_type).update(previous_balance = F("current_balance"), current_balance = updated_balance)
+                
             params = {
                     "status":status
                 }

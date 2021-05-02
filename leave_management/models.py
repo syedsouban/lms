@@ -35,7 +35,7 @@ class LeaveTypes(models.Model):
 
 class EmployeeLeaveBalance(models.Model):   
     employee =  models.ForeignKey("Employee", models.DO_NOTHING, blank=True, null=True)
-    open_balance =  models.FloatField(default=0, blank=True, null=True)  
+    previous_balance =  models.FloatField(default=0, blank=True, null=True)  
     current_balance =  models.FloatField(default=0, blank=True, null=True)  
     leave_type = models.ForeignKey(LeaveTypes, models.DO_NOTHING,blank=True, null=True)   # Type of Leave
     financial_year = models.IntegerField(default=2020, blank=True, null=True)

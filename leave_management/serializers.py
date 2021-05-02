@@ -3,6 +3,8 @@ from django.http import request
 from rest_framework import serializers
 from .models import *
 from datetime import date
+from datetime import datetime
+from django.db.models import F
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,10 +40,23 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         start_date = data["start_date"]
         end_date = data["end_date"]
+        
         if start_date > end_date:
             raise serializers.ValidationError("End date cannot be before start date")
         if self.check_if_leaves_overlap(data["employee"].employee_id, start_date, end_date):
             raise serializers.ValidationError("Employee currently has some leaves in this range")
+        if start_date.year != end_date.year:
+            raise serializers.ValidationError("Leaves being applied for more than financial year")
+        balance_rows = EmployeeLeaveBalance.objects.filter(employee = data["employee"], leave_type = data["leave_type"])
+        requesting_days_quantity = (end_date - start_date).days
+        if len(balance_rows) == 0:
+            raise serializers.ValidationError("Employee does not have enough balance to avail these leaves")
+        else:
+            leave_balance_obj = balance_rows[0]
+            leave_balance = leave_balance_obj.current_balance
+            
+            if leave_balance < requesting_days_quantity:
+                raise serializers.ValidationError("Employee does not have enough balance to avail these leaves")
         return data
     
     def create(self, validated_data):
@@ -84,6 +99,7 @@ class LeaveApplicationUpdateSerializer(LeaveApplicationGetSerializer):
         mgr_id = data.get("mgr_id")
         status = data.get("status")
         leave_id = data.get("leave_id")
+
         if emp_id and status not in ["Cancelled"]:
             raise serializers.ValidationError("Employee can only cancel an already applied leave")
         if mgr_id and status not in ["Approved", "Rejected"]:
