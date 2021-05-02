@@ -1,3 +1,6 @@
+
+
+
 """
 Django settings for accenflair project.
 
@@ -131,3 +134,22 @@ DATABASES = {
         'PORT':'3306'
     }
 }
+
+SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
+TEMPLATE_DIRS = (
+    os.path.join(SETTINGS_PATH, '../leave_application/templates'),
+)
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# # EMAIL_USE_TLS = True
+# # EMAIL_HOST = 'smtp.gmail.com'
+# # EMAIL_HOST_USER = 'superstoredummy@gmail.com'
+# # EMAIL_HOST_PASSWORD = 's3ndm@!l890'
+# # EMAIL_PORT = "465"
+
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_HOST_USER = 'superstoredummy@gmail.com'
+# EMAIL_HOST_PASSWORD = 's3ndm@!l890'
+# EMAIL_PORT = '465'
+# EMAIL_USE_TLS = True
+# EMAIL_USE_SSL = True

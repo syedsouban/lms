@@ -31,8 +31,9 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
     # status = serializers.ChoiceField(choices=(["Pending","Approved","Rejected","Cancelled"]))
     
     def check_if_leaves_overlap(self, emp_id, start_date, end_date):
-        query_set =  EmployeeLeaveApplication.objects.filter(employee_id = emp_id, start_date__gte = start_date, start_date__lte = end_date, end_date__gte = start_date, end_date__lte = end_date)
+        query_set =  EmployeeLeaveApplication.objects.filter(employee_id = emp_id, start_date__gte = start_date, start_date__lte = end_date, end_date__gte = start_date, end_date__lte = end_date).exclude(status = "Cancelled")
         return query_set
+        return False
 
     def validate(self, data):
         start_date = data["start_date"]
@@ -45,6 +46,11 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         return EmployeeLeaveApplication.objects.create(**validated_data)
+    
+    # def update(self, instance, validated_data): 
+    #     instance.status = validated_data.get('status')
+    #     instance.save()
+    #     return instance
 
     class Meta:
         model = EmployeeLeaveApplication
@@ -52,11 +58,12 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
 
 class LeaveApplicationGetSerializer(serializers.Serializer):
     
-    def custom_validator(self):
-        request = self.context['request']
-        
-        emp_id = request.query_params.get("emp_id")
-        mgr_id = request.query_params.get("mgr_id")
+    emp_id = serializers.IntegerField(required = False)
+    mgr_id = serializers.IntegerField(required = False)
+    
+    def custom_validator(self, data):
+        emp_id = data.get("emp_id")
+        mgr_id = data.get("mgr_id")
         if mgr_id and emp_id:
             raise serializers.ValidationError("Only one of mgr_id or emp_id must be passed")
         if not mgr_id and not emp_id:
@@ -64,5 +71,37 @@ class LeaveApplicationGetSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        self.custom_validator()
+        self.custom_validator(attrs)
         return attrs
+
+class LeaveApplicationUpdateSerializer(LeaveApplicationGetSerializer):
+    leave_id = serializers.IntegerField(required = True)
+    status = serializers.ChoiceField(choices=(["Pending","Approved","Rejected","Cancelled"]), required = True)
+
+    def custom_validator(self, data):
+        super().custom_validator(data)
+        emp_id = data.get("emp_id")
+        mgr_id = data.get("mgr_id")
+        status = data.get("status")
+        leave_id = data.get("leave_id")
+        if emp_id and status not in ["Cancelled"]:
+            raise serializers.ValidationError("Employee can only cancel an already applied leave")
+        if mgr_id and status not in ["Approved", "Rejected"]:
+            raise serializers.ValidationError("Manager can only approve or reject a leave")
+        employee_rows = EmployeeLeaveApplication.objects.select_related("employee").filter(pk = leave_id)
+        if len(employee_rows) == 1 and mgr_id:
+            if employee_rows[0].status == "Cancelled":
+                raise serializers.ValidationError("Employee has already cancelled the leave!")
+            actual_manager_id = employee_rows[0].employee.manager_id
+            if mgr_id!=actual_manager_id:
+                raise serializers.ValidationError("Employee's manager does not match")
+            
+        elif len(employee_rows) == 1 and emp_id:
+            actual_employee_id = employee_rows[0].employee.pk
+            if emp_id!=actual_employee_id:
+                raise serializers.ValidationError("This leave corresponds to a different employee")    
+        else:
+            raise serializers.ValidationError("Either leave or employee does not exists")
+        
+            
+    

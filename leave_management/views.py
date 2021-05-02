@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import *
 from .serializers import *
+from .email_helper import EmailHelper
 
 class LeaveApplicationView(APIView):
     serializer_class = EmployeeLeaveApplicationSerializer
@@ -13,7 +14,7 @@ class LeaveApplicationView(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            request_serializer = LeaveApplicationGetSerializer(context = {'request':request}, data = {})
+            request_serializer = LeaveApplicationGetSerializer(data = request.query_params)
             if not request_serializer.is_valid():
                 return Response(request_serializer.errors, status=400)
             emp_id = request.query_params.get("emp_id")
@@ -36,13 +37,33 @@ class LeaveApplicationView(APIView):
         data = JSONParser().parse(request)
         serializer = EmployeeLeaveApplicationSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
+            success = serializer.save()
+            if success:
+                params = {
+                    "start_date":data["start_date"],
+                    "end_date":data["end_date"]
+                }
+                EmailHelper.send_leave_application_mail(params, data["leave_type"], data["employee"])
+                return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
     def patch(self, request, *args, **kwargs):
-        emp_id = request.query_params.get("emp_id")
-        mgr_id = request.query_params.get("mgr_id")
+        request_serializer = LeaveApplicationUpdateSerializer(data = request.query_params)
+        if not request_serializer.is_valid():
+            return Response(request_serializer.errors, status=400)
         leave_id = request.query_params.get("leave_id")
+        status = request.query_params.get("status")
+        res = EmployeeLeaveApplication.objects.filter(pk = leave_id).update(status = status)
+        if res:
+            params = {
+                    "status":status
+                }
+            EmailHelper.send_leave_status_change_mail(params, leave_id)
+            return Response({"message":"Status of leave changed successfully"})
+        return Response({"message":"Something went wrong"},status = 500)
+
+        
+            
+
 
     

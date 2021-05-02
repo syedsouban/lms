@@ -55,6 +55,7 @@ class EmployeeLeaveApplication(models.Model):
     start_date = models.DateField(blank=False, null=True)
     end_date = models.DateField(blank=True, null=True)
     status =  models.CharField(choices=STATUS, max_length=20, default=STATUS[0][0])
+    leave_type = models.ForeignKey(LeaveTypes, models.DO_NOTHING,blank=False, null=False)
     class Meta:
         managed = True
         db_table = 'leaves_applications'
