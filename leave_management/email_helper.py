@@ -123,6 +123,10 @@ class EmailHelper:
         EmailHelper.sendMail(email, "Leave Status Change", html_content, True, managers_mail)
 
     @staticmethod
+    def send_credit_leave_op_completion_mail():
+        EmailHelper.sendMail("syedsouban890@gmail.com", "Leave credit Operation done", "Leaves are credited", True, "syedsouban890@gmail.com")
+
+    @staticmethod
     def sendMail(receiver_email, subject, content, is_html_message = True, cc = ""):
         message = MIMEMultipart("alternative")
         message["Subject"] = subject

@@ -59,3 +59,17 @@ class EmployeeLeaveApplication(models.Model):
     class Meta:
         managed = True
         db_table = 'leaves_applications'
+
+class EmployeeLeaveCredit(models.Model):    
+    employee =  models.ForeignKey("Employee", models.DO_NOTHING, blank=True, null=True)
+    leave_credit_id = models.AutoField(primary_key=True)   
+    leave_type = models.ForeignKey(LeaveTypes, models.DO_NOTHING,blank=True, null=True)   # Type of Leave
+    credited =  models.IntegerField(default=0, blank=True, null=True)  # No of leaves credited    
+    description =  models.CharField(max_length=500, blank=True, null=True)  
+    financial_year = models.IntegerField(default=2021, blank=True, null=True)  
+    month_credited = models.IntegerField(default=1, blank=True, null=True) # leaves credited for which month
+    credited_on = models.DateTimeField(blank=False, auto_now_add=True, null=True)
+    modified_on = models.DateTimeField(blank=True, auto_now=True, null=True)        
+    class Meta:
+        managed = True
+        db_table = 'emp_leaves_credits'

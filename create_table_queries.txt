@@ -1,0 +1,32 @@
+--
+-- Create model Employee
+--
+CREATE TABLE `employees` (`employee_id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `full_name` varchar(50) NOT NULL, `email` varchar(50) NOT NULL, `mobile` varchar(30) NOT NULL, `about` varchar(500) NULL, `designation` varchar(100) NULL, `country` varchar(30) NOT NULL, `company_name` varchar(50) NULL, `created_on` datetime(6) NULL, `modified_on` datetime(6) NULL, `created_by` varchar(50) NULL, `modified_by` datetime(6) NULL, `max_hours_limit` integer NULL, `screenshot_interval` integer NULL, `emp_photo_interval` integer NULL, `stripe_customer_id` varchar(50) NULL, `manager_id` integer NULL);
+--
+-- Create model LeaveTypes
+--
+CREATE TABLE `leaves_types` (`leave_type_id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(100) NULL, `description` varchar(500) NULL);
+--
+-- Create model EmployeeLeaveBalance
+--
+CREATE TABLE `emp_leaves_balance` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `open_balance` double precision NULL, `current_balance` double precision NULL, `financial_year` integer NULL, `created_on` datetime(6) NULL, `modified_on` datetime(6) NULL, `employee_id` integer NULL, `leave_type_id` integer NULL);
+--
+-- Create model EmployeeLeaveApplication
+--
+CREATE TABLE `leaves_applications` (`leave_id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `description` varchar(500) NULL, `requested_on` datetime(6) NULL, `modified_on` datetime(6) NULL, `start_date` datetime(6) NULL, `end_date` datetime(6) NULL, `no_of_days` double precision NULL, `status` varchar(20) NOT NULL, `employee_id` integer NULL, `manager_id` integer NULL);
+ALTER TABLE `employees` ADD CONSTRAINT `employees_manager_id_0674f795_fk_employees_employee_id` FOREIGN KEY (`manager_id`) REFERENCES `employees` (`employee_id`);
+ALTER TABLE `emp_leaves_balance` ADD CONSTRAINT `emp_leaves_balance_employee_id_41e18c41_fk_employees_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`);
+ALTER TABLE `emp_leaves_balance` ADD CONSTRAINT `emp_leaves_balance_leave_type_id_f8e9b227_fk_leaves_ty` FOREIGN KEY (`leave_type_id`) REFERENCES `leaves_types` (`leave_type_id`);
+ALTER TABLE `leaves_applications` ADD CONSTRAINT `leaves_applications_employee_id_6ee303b9_fk_employees` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`employee_id`);
+ALTER TABLE `leaves_applications` ADD CONSTRAINT `leaves_applications_manager_id_ce743a3a_fk_employees_employee_id` FOREIGN KEY (`manager_id`) REFERENCES `employees` (`employee_id`);
+
+
+-
+--
+-- Alter field created_on on employee
+--
+ALTER TABLE `employees` MODIFY `created_on` datetime(6) NOT NULL;
+--
+-- Alter field designation on employee
+--
+ALTER TABLE `employees` MODIFY `designation` varchar(100) NOT NULL;

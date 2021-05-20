@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'leave_management',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -139,6 +140,8 @@ SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 TEMPLATE_DIRS = (
     os.path.join(SETTINGS_PATH, '../leave_application/templates'),
 )
+
+# RUNSCRIPT_CHDIR = os.path.join(SETTINGS_PATH, 'scripts')
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # # EMAIL_USE_TLS = True

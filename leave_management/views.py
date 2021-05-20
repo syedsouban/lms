@@ -1,10 +1,12 @@
 from django.db.models.manager import Manager
+from django.http.response import HttpResponseBadRequest
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import *
 from .serializers import *
 from .email_helper import EmailHelper
+from django.http import HttpResponse
 
 class LeaveApplicationView(APIView):
     serializer_class = EmployeeLeaveApplicationSerializer
@@ -72,6 +74,23 @@ class LeaveApplicationView(APIView):
             EmailHelper.send_leave_status_change_mail(params, leave_id)
             return Response({"message":"Status of leave changed successfully"})
         return Response({"message":"Something went wrong"},status = 500)
+
+def credit_leaves(request):
+    args = request.GET
+    leave_type_id = args.get("leave_type_id")
+    duration = args.get("duration")
+    financial_year = args.get("financial_year")
+    description = args.get("description")
+    if not leave_type_id or not duration or not financial_year or not description:
+        return HttpResponseBadRequest("Params missing")
+    from subprocess import Popen
+    p = Popen(f"python manage.py runscript credit_leaves --script-args ${leave_type_id} ${duration} ${financial_year} ${description}", shell=True)
+    print(p)
+    return HttpResponse("The script to credit leaves has been triggered! The HR will be notified once the process is completed")
+
+
+
+
 
         
             
