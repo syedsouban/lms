@@ -1,10 +1,8 @@
-from datetime import datetime
-from django.http import request
+
 from rest_framework import serializers
 from .models import *
-from datetime import date
 from datetime import datetime
-from django.db.models import F
+
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,21 +19,10 @@ class EmployeeLeaveBalanceSerializer(serializers.ModelSerializer):
         model = EmployeeLeaveBalance
         fields = "__all__"
 
-
 class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
-    # employee =  serializers.PrimaryKeyRelatedField(queryset = Employee.objects.all())
-    # description =  serializers.CharField(max_length=500, allow_blank = True)
-    # start_date = serializers.DateField(required = True)
-    # end_date = serializers.DateField(required = True)
-    # requested_on = serializers.DateTimeField()
-    # modified_on = serializers.DateTimeField()
-    # description =  serializers.CharField(max_length=500)
-    # status = serializers.ChoiceField(choices=(["Pending","Approved","Rejected","Cancelled"]))
-    
     def check_if_leaves_overlap(self, emp_id, start_date, end_date):
-        query_set =  EmployeeLeaveApplication.objects.filter(employee_id = emp_id, start_date__gte = start_date, start_date__lte = end_date, end_date__gte = start_date, end_date__lte = end_date).exclude(status = "Cancelled")
+        query_set =  EmployeeLeaveApplication.objects.filter(employee_id = emp_id, start_date__gte = start_date, start_date__lte = end_date, end_date__gte = start_date, end_date__lte = end_date).exclude(status__in = ["Cancelled", "Rejected"])
         return query_set
-        return False
 
     def validate(self, data):
         start_date = data["start_date"]
@@ -54,7 +41,6 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
         else:
             leave_balance_obj = balance_rows[0]
             leave_balance = leave_balance_obj.current_balance
-            
             if leave_balance < requesting_days_quantity:
                 raise serializers.ValidationError("Employee does not have enough balance to avail these leaves")
         return data
@@ -62,11 +48,6 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return EmployeeLeaveApplication.objects.create(**validated_data)
     
-    # def update(self, instance, validated_data): 
-    #     instance.status = validated_data.get('status')
-    #     instance.save()
-    #     return instance
-
     class Meta:
         model = EmployeeLeaveApplication
         fields = "__all__"
@@ -118,6 +99,3 @@ class LeaveApplicationUpdateSerializer(LeaveApplicationGetSerializer):
                 raise serializers.ValidationError("This leave corresponds to a different employee")    
         else:
             raise serializers.ValidationError("Either leave or employee does not exists")
-        
-            
-    

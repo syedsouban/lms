@@ -73,3 +73,14 @@ class EmployeeLeaveCredit(models.Model):
     class Meta:
         managed = True
         db_table = 'emp_leaves_credits'
+
+class Holidays(models.Model):
+    name = models.CharField(max_length=50, blank=False, null=False) 
+    day = models.IntegerField(blank=False, null=False)
+    month = models.IntegerField(blank=False, null=False)
+    year = models.IntegerField(blank=False, null=False)  
+    credited_on = models.DateTimeField(blank=False, auto_now_add=True, null=True)
+    modified_on = models.DateTimeField(blank=True, auto_now=True, null=True)        
+    class Meta:
+        managed = True
+        db_table = 'holidays'

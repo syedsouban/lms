@@ -1,4 +1,3 @@
-from django.db.models.manager import Manager
 from django.http.response import HttpResponseBadRequest
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
@@ -7,6 +6,8 @@ from .models import *
 from .serializers import *
 from .email_helper import EmailHelper
 from django.http import HttpResponse
+from .jobs import schedule
+from django.db.models import F
 
 class LeaveApplicationView(APIView):
     serializer_class = EmployeeLeaveApplicationSerializer
@@ -45,7 +46,7 @@ class LeaveApplicationView(APIView):
                     "start_date":data["start_date"],
                     "end_date":data["end_date"]
                 }
-                EmailHelper.send_leave_application_mail(params, data["leave_type"], data["employee"])
+                schedule([EmailHelper.send_leave_application_mail], params, data["leave_type"], data["employee"])
                 return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
@@ -56,6 +57,8 @@ class LeaveApplicationView(APIView):
         leave_id = request.query_params.get("leave_id")
         old_status = EmployeeLeaveApplication.objects.get(pk = leave_id).status
         status = request.query_params.get("status")
+        if old_status == status:
+            return Response({"message":"This leave is already set to the same status"}, status=400)
         res = EmployeeLeaveApplication.objects.filter(pk = leave_id).update(status = status)
         if res:
             leave = EmployeeLeaveApplication.objects.get(pk = leave_id)
@@ -71,9 +74,37 @@ class LeaveApplicationView(APIView):
             params = {
                     "status":status
                 }
-            EmailHelper.send_leave_status_change_mail(params, leave_id)
+            schedule([EmailHelper.send_leave_status_change_mail], params, leave_id)
+            
             return Response({"message":"Status of leave changed successfully"})
         return Response({"message":"Something went wrong"},status = 500)
+
+class LeaveBalanceView(APIView):
+    
+    def get_queryset(self):
+        queryset = models.EmployeeLeaveBalance.objects.all()
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        try:
+            emp_id = request.query_params.get("emp_id")
+            mgr_id = request.query_params.get("mgr_id")
+            if not emp_id and not mgr_id:
+                return Response(status=409)
+            
+            if emp_id:
+                leave_balances = EmployeeLeaveBalance.objects.filter(employee = emp_id)
+                serializer = EmployeeLeaveBalanceSerializer(leave_balances, many = True)
+                return Response(serializer.data)
+            elif mgr_id:
+                reportee_ids = Employee.objects.filter(manager=mgr_id).values('employee_id')
+                leaves = EmployeeLeaveBalance.objects.filter(employee_id__in=reportee_ids)
+                serializer = EmployeeLeaveBalanceSerializer(leaves, many = True)
+                return Response(serializer.data)
+        except:
+            import traceback
+            print(traceback.format_exc())
+            return Response({"message":"Something went wrong"},status = 500)
 
 def credit_leaves(request):
     args = request.GET

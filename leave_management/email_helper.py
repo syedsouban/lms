@@ -1,4 +1,5 @@
 # import sendgrid
+from datetime import datetime
 from leave_management.models import Employee, EmployeeLeaveApplication, LeaveTypes
 import os
 from django.conf import settings
@@ -11,7 +12,8 @@ from django.template.loader import render_to_string
 from django.urls import resolve
 import smtplib, ssl
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from email.mime.multipart import MIMEMultipart 
+from .db import get_manager_by_employee
 
 class EmailHelper:
 
@@ -94,13 +96,18 @@ class EmailHelper:
         employee = Employee.objects.get(pk = employee_id)
         email = employee.email
         full_name = employee.full_name
+        manager = get_manager_by_employee(employee)
         params.update({
             "full_name":full_name,
-            "leave_type": leave_type
+            "leave_type": leave_type,
+            "manager": manager.full_name
         })
+        
         html_content = render_to_string('leave_application.html', params)
         EmailHelper.sendMail(email, "Leave Application", html_content)
-    
+        html_content_to_manager = render_to_string('leave_application_manager.html', params)
+        EmailHelper.sendMail(manager.email, "Employee Leave Application", html_content_to_manager)
+        
     @staticmethod
     def send_leave_status_change_mail(params, leave_id):
         ctx = Context(params)
@@ -111,16 +118,21 @@ class EmailHelper:
         employee = leave_application.employee
         email = employee.email
         full_name = employee.full_name
+        
         manager_id = employee.manager_id
-        managers_mail = Employee.objects.get(pk = manager_id).email
+        manager = Employee.objects.get(pk = manager_id)
+
         params.update({
             "full_name":full_name,
             "leave_type": leave_type,
             "start_date":start_date,
-            "end_date":end_date
+            "end_date":end_date,
+            "manager":manager.full_name
         })
         html_content = render_to_string('leave_status_change.html', params)
-        EmailHelper.sendMail(email, "Leave Status Change", html_content, True, managers_mail)
+        EmailHelper.sendMail(email, "Leave Status Change", html_content)
+        html_content_manager = render_to_string('leave_status_change_manager.html', params)
+        EmailHelper.sendMail(manager.email, "Employee Leave Status Change", html_content_manager)
 
     @staticmethod
     def send_credit_leave_op_completion_mail():
