@@ -40,13 +40,12 @@ class LeaveApplicationView(APIView):
         data = JSONParser().parse(request)
         serializer = EmployeeLeaveApplicationSerializer(data=data)
         if serializer.is_valid():
-            success = serializer.save()
-            if success:
-                params = {
-                    "start_date":data["start_date"],
-                    "end_date":data["end_date"]
-                }
-                schedule([EmailHelper.send_leave_application_mail], params, data["leave_type"], data["employee"])
+            leave_applications = serializer.save()
+            if leave_applications:
+                serializer = EmployeeLeaveApplicationSerializer(leave_applications, many = True)
+                for leave_application in leave_applications:
+                    schedule([EmailHelper.send_leave_application_mail], {"start_date":leave_application.start_date, "end_date":leave_application.end_date},
+                     leave_application.leave_type.leave_type_id, leave_application.employee.pk)
                 return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
@@ -59,25 +58,32 @@ class LeaveApplicationView(APIView):
         status = request.query_params.get("status")
         if old_status == status:
             return Response({"message":"This leave is already set to the same status"}, status=400)
-        res = EmployeeLeaveApplication.objects.filter(pk = leave_id).update(status = status)
-        if res:
-            leave = EmployeeLeaveApplication.objects.get(pk = leave_id)
-            leave_duration = (leave.end_date - leave.start_date).days
-                
-            if status == "Approved":
-                updated_balance = F("current_balance")-leave_duration
-                EmployeeLeaveBalance.objects.filter(employee = leave.employee, leave_type = leave.leave_type).update(previous_balance = F("current_balance"),current_balance = updated_balance)
-            if old_status == "Approved" and (status == "Cancelled" or status == "Rejected"):
-                updated_balance = F("current_balance")+leave_duration
-                EmployeeLeaveBalance.objects.filter(employee = leave.employee, leave_type = leave.leave_type).update(previous_balance = F("current_balance"), current_balance = updated_balance)
-                
-            params = {
-                    "status":status
-                }
-            schedule([EmailHelper.send_leave_status_change_mail], params, leave_id)
-            
-            return Response({"message":"Status of leave changed successfully"})
-        return Response({"message":"Something went wrong"},status = 500)
+        leave = EmployeeLeaveApplication.objects.get(pk = leave_id)
+        leave_duration = (leave.end_date - leave.start_date).days + 1
+        balance = get_leave_balance_by_leave_type_and_emp_id(leave.leave_type_id, leave.employee_id)
+        lop_leave = get_lop_leave_type()
+        if leave.leave_type_id == lop_leave.leave_type_id:
+            res = EmployeeLeaveApplication.objects.filter(pk = leave_id).update(status = status)
+            if res:
+                return Response({"message":"Status of leave changed successfully"})
+            else:
+                return Response({"message":"Something went wrong"}, 500)
+        if leave_duration > balance:
+            return Response({"message":"Balance not availabe"}, status = 400)    
+        if status == "Approved":
+            updated_balance = F("current_balance")-leave_duration
+            res = EmployeeLeaveBalance.objects.filter(employee = leave.employee, leave_type = leave.leave_type).update(previous_balance = F("current_balance"),current_balance = updated_balance)
+        if old_status == "Approved" and (status == "Cancelled" or status == "Rejected"):
+            updated_balance = F("current_balance")+leave_duration
+            res = EmployeeLeaveBalance.objects.filter(employee = leave.employee, leave_type = leave.leave_type).update(previous_balance = F("current_balance"), current_balance = updated_balance)
+        if res or (status == "Cancelled" or status == "Rejected"):
+            EmployeeLeaveApplication.objects.filter(pk = leave_id).update(status = status)
+        params = {
+                "status":status
+            }
+        schedule([EmailHelper.send_leave_status_change_mail], params, leave_id)
+        
+        return Response({"message":"Status of leave changed successfully"})
 
 class LeaveBalanceView(APIView):
     

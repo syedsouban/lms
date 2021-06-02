@@ -1,8 +1,9 @@
 
+import re
 from rest_framework import serializers
 from .models import *
-from datetime import datetime
-
+from datetime import datetime, time, timedelta
+from copy import deepcopy
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,6 +20,37 @@ class EmployeeLeaveBalanceSerializer(serializers.ModelSerializer):
         model = EmployeeLeaveBalance
         fields = "__all__"
 
+def get_special_leave_type():
+    special_leave = LeaveTypes.objects.filter(name = "Special Leave")
+    special_leave = special_leave[0] if len(special_leave)>0 else {}
+    return special_leave
+
+def get_lop_leave_type():
+    lop_leave = LeaveTypes.objects.filter(name = "LOP Leave")
+    special_leave = lop_leave[0] if len(lop_leave)>0 else {}
+    return special_leave
+
+def get_leaves_by_leave_type_and_emp_id(leave_type_id, employee):
+    special_leave = get_special_leave_type()
+    lop_leave = get_lop_leave_type()
+    if (special_leave or lop_leave) and (leave_type_id == special_leave.leave_type_id or leave_type_id == lop_leave.leave_type_id):
+        leaves = EmployeeLeaveBalance.objects.filter(employee = employee)
+    else:
+        leaves = EmployeeLeaveBalance.objects.filter(employee = employee, leave_type = leave_type_id)
+    return leaves
+
+def get_leave_balance_by_leaves(leaves):
+    leave_balance = 0
+    for balance_obj in leaves:
+        leave_balance += balance_obj.current_balance
+    return leave_balance
+
+def get_leave_balance_by_leave_type_and_emp_id(leave_type_id, employee):
+    leaves = get_leaves_by_leave_type_and_emp_id(leave_type_id, employee)
+    leave_balance = get_leave_balance_by_leaves(leaves)
+    return leave_balance
+    
+
 class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
     def check_if_leaves_overlap(self, emp_id, start_date, end_date):
         query_set =  EmployeeLeaveApplication.objects.filter(employee_id = emp_id, start_date__gte = start_date, start_date__lte = end_date, end_date__gte = start_date, end_date__lte = end_date).exclude(status__in = ["Cancelled", "Rejected"])
@@ -27,26 +59,52 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         start_date = data["start_date"]
         end_date = data["end_date"]
-        
         if start_date > end_date:
             raise serializers.ValidationError("End date cannot be before start date")
         if self.check_if_leaves_overlap(data["employee"].employee_id, start_date, end_date):
             raise serializers.ValidationError("Employee currently has some leaves in this range")
         if start_date.year != end_date.year:
             raise serializers.ValidationError("Leaves being applied for more than financial year")
-        balance_rows = EmployeeLeaveBalance.objects.filter(employee = data["employee"], leave_type = data["leave_type"])
-        requesting_days_quantity = (end_date - start_date).days
-        if len(balance_rows) == 0:
+        requesting_days_quantity = (end_date - start_date).days + 1
+        lop_leave = get_lop_leave_type()
+        leave_balance = get_leave_balance_by_leave_type_and_emp_id(data["leave_type"].leave_type_id, data["employee"])
+        if leave_balance < requesting_days_quantity and not lop_leave.leave_type_id == data["leave_type"].leave_type_id:
             raise serializers.ValidationError("Employee does not have enough balance to avail these leaves")
-        else:
-            leave_balance_obj = balance_rows[0]
-            leave_balance = leave_balance_obj.current_balance
-            if leave_balance < requesting_days_quantity:
-                raise serializers.ValidationError("Employee does not have enough balance to avail these leaves")
         return data
     
     def create(self, validated_data):
-        return EmployeeLeaveApplication.objects.create(**validated_data)
+        leaves = get_leaves_by_leave_type_and_emp_id(validated_data["leave_type"].leave_type_id, validated_data["employee"])
+        start_date = validated_data["start_date"]
+        end_date = validated_data["end_date"]
+        requesting_days_quantity = (end_date - start_date).days + 1
+        ostart_date = start_date
+        oend_date = start_date - timedelta(days=1)
+        data = []
+        for i in range(len(leaves)):
+            balance = leaves[i].current_balance
+            leave_cut_for_type = balance if requesting_days_quantity > balance else requesting_days_quantity
+            nstart_date = oend_date + timedelta(days=1)
+            nend_date = nstart_date + timedelta(leave_cut_for_type) - timedelta(days=1)
+            oend_date = nend_date
+            validated_data["start_date"] = nstart_date
+            validated_data["end_date"] = nend_date
+            validated_data["leave_type_id"] = leaves[i].leave_type_id
+            data.append(EmployeeLeaveApplication.objects.create(**validated_data))
+            requesting_days_quantity = requesting_days_quantity - leave_cut_for_type
+        lop_leave = get_lop_leave_type()
+
+        if requesting_days_quantity!=0 and validated_data["leave_type"].leave_type_id == lop_leave.leave_type_id:
+            leave_cut_for_type = requesting_days_quantity
+            nstart_date = oend_date + timedelta(days=1)
+            nend_date = nstart_date + timedelta(leave_cut_for_type) - timedelta(days=1)
+            oend_date = nend_date
+            validated_data["start_date"] = nstart_date
+            validated_data["end_date"] = nend_date
+            validated_data["leave_type_id"] = lop_leave.leave_type_id
+            data.append(EmployeeLeaveApplication.objects.create(**validated_data))
+            requesting_days_quantity = requesting_days_quantity - leave_cut_for_type
+            
+        return data
     
     class Meta:
         model = EmployeeLeaveApplication
