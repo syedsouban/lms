@@ -34,7 +34,7 @@ def get_leaves_by_leave_type_and_emp_id(leave_type_id, employee):
     special_leave = get_special_leave_type()
     lop_leave = get_lop_leave_type()
     if (special_leave or lop_leave) and (leave_type_id == special_leave.leave_type_id or leave_type_id == lop_leave.leave_type_id):
-        leaves = EmployeeLeaveBalance.objects.filter(employee = employee)
+        leaves = EmployeeLeaveBalance.objects.filter(employee = employee).select_related("leave_type").select_related("employee")
     else:
         leaves = EmployeeLeaveBalance.objects.filter(employee = employee, leave_type = leave_type_id)
     return leaves
@@ -86,11 +86,15 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
             nstart_date = oend_date + timedelta(days=1)
             nend_date = nstart_date + timedelta(leave_cut_for_type) - timedelta(days=1)
             oend_date = nend_date
+            validated_data["leave_type_name"] = leaves[i].leave_type.name
             validated_data["start_date"] = nstart_date
             validated_data["end_date"] = nend_date
             validated_data["leave_type_id"] = leaves[i].leave_type_id
+            validated_data["employee_name"] = leaves[i].employee.full_name
+
             data.append(EmployeeLeaveApplication.objects.create(**validated_data))
             requesting_days_quantity = requesting_days_quantity - leave_cut_for_type
+            
         lop_leave = get_lop_leave_type()
 
         if requesting_days_quantity!=0 and validated_data["leave_type"].leave_type_id == lop_leave.leave_type_id:

@@ -3,11 +3,17 @@ from django.db.models import F
 from leave_management.email_helper import EmailHelper
 
 def credit_leaves(emp_id, leave_type_id, description, num_leaves, financial_year):
+    employee = Employee.objects.filter(employee_id = emp_id)
+    employee_name = employee[0].full_name if len(employee) > 0 else None
+
+    leave = LeaveTypes.objects.filter(leave_type_id = leave_type_id)
+    leave_type_name = leave[0].name if len(leave) > 0 else None
+
     elc = EmployeeLeaveCredit.objects.create(employee_id = emp_id, leave_type_id = leave_type_id, description = description, credited = num_leaves, financial_year = financial_year)
     curr_leave_balance = EmployeeLeaveBalance.objects.filter(employee_id = emp_id, leave_type_id = leave_type_id, financial_year = financial_year)
     status = False
     if not curr_leave_balance:
-        status = EmployeeLeaveBalance.objects.create(employee_id = emp_id, leave_type_id = leave_type_id, current_balance = num_leaves, previous_balance = num_leaves, financial_year = financial_year) 
+        status = EmployeeLeaveBalance.objects.create(employee_id = emp_id, leave_type_id = leave_type_id, current_balance = num_leaves, previous_balance = num_leaves, financial_year = financial_year, employee_name = employee_name, leave_type_name = leave_type_name) 
     else:
         status = EmployeeLeaveBalance.objects.filter(employee_id = emp_id, leave_type_id = leave_type_id, financial_year = financial_year) \
         .update(previous_balance = F("current_balance"), current_balance = F("current_balance")+num_leaves)

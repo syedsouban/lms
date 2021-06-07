@@ -40,7 +40,9 @@ class EmployeeLeaveBalance(models.Model):
     leave_type = models.ForeignKey(LeaveTypes, models.DO_NOTHING,blank=True, null=True)   # Type of Leave
     financial_year = models.IntegerField(default=2020, blank=True, null=True)
     created_on = models.DateTimeField(blank=False, auto_now_add=True, null=True)
-    modified_on = models.DateTimeField(blank=True, auto_now=True, null=True)        
+    modified_on = models.DateTimeField(blank=True, auto_now=True, null=True)
+    leave_type_name = models.CharField(max_length=50, blank=True, null=True)
+    employee_name = models.CharField(max_length=50, blank=True, null=True)        
     class Meta:
         managed = True
         db_table = 'emp_leaves_balance'
@@ -56,6 +58,8 @@ class EmployeeLeaveApplication(models.Model):
     end_date = models.DateField(blank=True, null=True)
     status =  models.CharField(choices=STATUS, max_length=20, default=STATUS[0][0])
     leave_type = models.ForeignKey(LeaveTypes, models.DO_NOTHING,blank=False, null=False)
+    leave_type_name = models.CharField(max_length=50, blank=True, null=True)
+    employee_name = models.CharField(max_length=50, blank=True, null=True)
     class Meta:
         managed = True
         db_table = 'leaves_applications'

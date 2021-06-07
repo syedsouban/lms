@@ -99,7 +99,10 @@ class LeaveBalanceView(APIView):
                 return Response(status=409)
             
             if emp_id:
-                leave_balances = EmployeeLeaveBalance.objects.filter(employee = emp_id)
+                leave_balances = EmployeeLeaveBalance.objects.filter(employee = emp_id).select_related("employee").select_related("leave_types")
+                for i in range(len(leave_balances)):
+                    leave_balances[i].leave_type_name = leave_balances.leave_type.name
+                    leave_balances[i].employee_name = leave_balances.employee.full_name
                 serializer = EmployeeLeaveBalanceSerializer(leave_balances, many = True)
                 return Response(serializer.data)
             elif mgr_id:
