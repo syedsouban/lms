@@ -60,6 +60,7 @@ class EmployeeLeaveApplication(models.Model):
     leave_type = models.ForeignKey(LeaveTypes, models.DO_NOTHING,blank=False, null=False)
     leave_type_name = models.CharField(max_length=50, blank=True, null=True)
     employee_name = models.CharField(max_length=50, blank=True, null=True)
+    num_leaves = models.IntegerField(blank=True, null=True)
     class Meta:
         managed = True
         db_table = 'leaves_applications'

@@ -62,13 +62,14 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
             nstart_date = working_days[start_index]
             end_index = start_index+int(leave_cut_for_type) - 1
             nend_date = working_days[end_index]
+            num_leaves = end_index - start_index + 1
             validated_data["leave_type_name"] = leaves[i].leave_type.name
             validated_data["start_date"] = nstart_date
             validated_data["end_date"] = nend_date
             validated_data["leave_type_id"] = leaves[i].leave_type_id
-            
+            validated_data["num_leaves"] = num_leaves
             data.append(EmployeeLeaveApplication.objects.create(**validated_data))
-            requesting_days_quantity = requesting_days_quantity - (end_index - start_index + 1)
+            requesting_days_quantity = requesting_days_quantity - (num_leaves)
             
         lop_leave = get_lop_leave_type()
 
@@ -78,12 +79,15 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
             nstart_date = working_days[start_index]
             end_index = start_index+int(leave_cut_for_type) - 1
             nend_date = working_days[end_index]
+            num_leaves = end_index - start_index + 1
             validated_data["start_date"] = nstart_date
             validated_data["end_date"] = nend_date
             validated_data["leave_type_id"] = lop_leave.leave_type_id
             validated_data["leave_type_name"] = lop_leave.name
+            validated_data["num_leaves"] = num_leaves
+            
             data.append(EmployeeLeaveApplication.objects.create(**validated_data))
-            requesting_days_quantity = requesting_days_quantity - leave_cut_for_type
+            requesting_days_quantity = requesting_days_quantity - num_leaves
             
         return data
     
