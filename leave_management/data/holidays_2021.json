@@ -1,0 +1,49 @@
+[{
+        "name": "New Year",
+        "date": "2021-01-01"
+    },
+    {
+        "name": "Republic Day",
+        "date": "2021-01-26"
+    },
+    {
+        "name": "Good Friday",
+        "date": "2021-04-02"
+    },
+    {
+        "name": "Ambedkar Jayanti",
+        "date": "2021-4-14"
+    },
+    {
+        "name": "Rama Navami",
+        "date": "2021-04-21"
+    },
+    {
+        "name": "Eid Ul-Fitr",
+        "date": "2021-05-14"
+    },
+    {
+        "name": "Eid Ul-Adha",
+        "date": "2021-07-21"
+    },
+    {
+        "name": "Independence day",
+        "date": "2021-08-15"
+    },
+    {
+        "name": "Gandhi Jayanti",
+        "date": "2021-10-02"
+    },
+    {
+        "name": "Dusshera",
+        "date": "2021-08-15"
+    },
+    {
+        "name": "Diwali",
+        "date": "2021-11-04"
+    },
+    {
+        "name": "Christmas",
+        "date": "2021-12-25"
+    }
+]

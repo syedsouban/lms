@@ -97,16 +97,18 @@ class EmailHelper:
         email = employee.email
         full_name = employee.full_name
         manager = get_manager_by_employee(employee)
-        params.update({
-            "full_name":full_name,
-            "leave_type": leave_type,
-            "manager": manager.full_name
-        })
+        if manager:
+            params.update({
+                "full_name":full_name,
+                "leave_type": leave_type,
+                "manager": manager.full_name
+            })
         
         html_content = render_to_string('leave_application.html', params)
         EmailHelper.sendMail(email, "Leave Application", html_content)
-        html_content_to_manager = render_to_string('leave_application_manager.html', params)
-        EmailHelper.sendMail(manager.email, "Employee Leave Application", html_content_to_manager)
+        if manager:
+            html_content_to_manager = render_to_string('leave_application_manager.html', params)
+            EmailHelper.sendMail(manager.email, "Employee Leave Application", html_content_to_manager)
         
     @staticmethod
     def send_leave_status_change_mail(params, leave_id):

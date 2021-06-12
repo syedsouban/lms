@@ -8,6 +8,8 @@ from .email_helper import EmailHelper
 from django.http import HttpResponse
 from .jobs import schedule
 from django.db.models import F
+from leave_management.holiday_utils import get_num_working_days
+from .db import *
 
 class LeaveApplicationView(APIView):
     serializer_class = EmployeeLeaveApplicationSerializer
@@ -58,8 +60,10 @@ class LeaveApplicationView(APIView):
         status = request.query_params.get("status")
         if old_status == status:
             return Response({"message":"This leave is already set to the same status"}, status=400)
+        # elif old_status == "Rejected" and status == "Cancelled":
+        #     return Response({"message":"Employee cannot cancel a rejected leave"}, status=400)
         leave = EmployeeLeaveApplication.objects.get(pk = leave_id)
-        leave_duration = (leave.end_date - leave.start_date).days + 1
+        leave_duration = get_num_working_days(leave.start_date, leave.end_date)
         balance = get_leave_balance_by_leave_type_and_emp_id(leave.leave_type_id, leave.employee_id)
         lop_leave = get_lop_leave_type()
         if leave.leave_type_id == lop_leave.leave_type_id:
@@ -99,10 +103,8 @@ class LeaveBalanceView(APIView):
                 return Response(status=409)
             
             if emp_id:
-                leave_balances = EmployeeLeaveBalance.objects.filter(employee = emp_id).select_related("employee").select_related("leave_types")
-                for i in range(len(leave_balances)):
-                    leave_balances[i].leave_type_name = leave_balances.leave_type.name
-                    leave_balances[i].employee_name = leave_balances.employee.full_name
+                leave_balances = EmployeeLeaveBalance.objects.filter(employee = emp_id).select_related("employee").select_related("leave_type")
+                
                 serializer = EmployeeLeaveBalanceSerializer(leave_balances, many = True)
                 return Response(serializer.data)
             elif mgr_id:

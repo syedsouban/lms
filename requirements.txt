@@ -42,4 +42,4 @@ stripe==2.55.0
 uritemplate==3.0.1
 urllib3==1.25.8
 apscheduler
-
+python-networkdays
