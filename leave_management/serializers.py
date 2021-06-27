@@ -8,6 +8,11 @@ from copy import deepcopy
 from leave_management.holiday_utils import get_num_working_days, get_working_days
 from .db import *
 
+class HolidaysSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Holidays
+        fields = "__all__"
+
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
@@ -21,11 +26,16 @@ class LeaveTypesSerializer(serializers.ModelSerializer):
 class EmployeeLeaveBalanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeeLeaveBalance
+        fields = "__all__"
+
+class EmployeeLeaveCreditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeLeaveCredit
         fields = "__all__"    
 
 class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
     def check_if_leaves_overlap(self, emp_id, start_date, end_date):
-        query_set =  EmployeeLeaveApplication.objects.filter(Q(employee_id = emp_id) & (Q(start_date__gte = start_date) & Q(start_date__lte = end_date)) | (Q(end_date__gte = start_date) & Q(end_date__lte = end_date))).exclude(status__in = ["Cancelled", "Rejected"])
+        query_set =  EmployeeLeaveApplication.objects.filter(Q(employee_id = emp_id) & ((Q(start_date__gte = start_date) & Q(start_date__lte = end_date)) | (Q(end_date__gte = start_date) & Q(end_date__lte = end_date)))).exclude(status__in = ["Cancelled", "Rejected"])
         return query_set
 
     def validate(self, data):
@@ -35,8 +45,8 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("End date cannot be before start date")
         if self.check_if_leaves_overlap(data["employee"].employee_id, start_date, end_date):
             raise serializers.ValidationError("Employee currently has some leaves in this range")
-        if start_date.year != end_date.year:
-            raise serializers.ValidationError("Leaves being applied for more than financial year")
+        # if start_date.year != end_date.year:
+        #     raise serializers.ValidationError("Leaves being applied for more than financial year")
         requesting_days_quantity = get_num_working_days(start_date, end_date)
         lop_leave = get_lop_leave_type()
         leave_balance = get_leave_balance_by_leave_type_and_emp_id(data["leave_type"].leave_type_id, data["employee"])
@@ -57,19 +67,22 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
         data = []
         for i in range(len(leaves)):
             balance = leaves[i].current_balance
-            leave_cut_for_type = balance if requesting_days_quantity > balance else requesting_days_quantity
-            start_index = end_index+1
-            nstart_date = working_days[start_index]
-            end_index = start_index+int(leave_cut_for_type) - 1
-            nend_date = working_days[end_index]
-            num_leaves = end_index - start_index + 1
-            validated_data["leave_type_name"] = leaves[i].leave_type.name
-            validated_data["start_date"] = nstart_date
-            validated_data["end_date"] = nend_date
-            validated_data["leave_type_id"] = leaves[i].leave_type_id
-            validated_data["num_leaves"] = num_leaves
-            data.append(EmployeeLeaveApplication.objects.create(**validated_data))
-            requesting_days_quantity = requesting_days_quantity - (num_leaves)
+            if balance > 0:
+                leave_cut_for_type = balance if requesting_days_quantity > balance else requesting_days_quantity
+                if leave_cut_for_type == 0:
+                    break
+                start_index = end_index+1
+                nstart_date = working_days[start_index]
+                end_index = start_index+int(leave_cut_for_type) - 1
+                nend_date = working_days[end_index]
+                num_leaves = end_index - start_index + 1
+                validated_data["leave_type_name"] = leaves[i].leave_type.name
+                validated_data["start_date"] = nstart_date
+                validated_data["end_date"] = nend_date
+                validated_data["leave_type_id"] = leaves[i].leave_type_id
+                validated_data["num_leaves"] = num_leaves
+                data.append(EmployeeLeaveApplication.objects.create(**validated_data))
+                requesting_days_quantity = requesting_days_quantity - (num_leaves)
             
         lop_leave = get_lop_leave_type()
 
@@ -85,7 +98,6 @@ class EmployeeLeaveApplicationSerializer(serializers.ModelSerializer):
             validated_data["leave_type_id"] = lop_leave.leave_type_id
             validated_data["leave_type_name"] = lop_leave.name
             validated_data["num_leaves"] = num_leaves
-            
             data.append(EmployeeLeaveApplication.objects.create(**validated_data))
             requesting_days_quantity = requesting_days_quantity - num_leaves
             

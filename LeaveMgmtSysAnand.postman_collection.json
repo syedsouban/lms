@@ -1,0 +1,495 @@
+{
+	"info": {
+		"_postman_id": "898b562d-ffae-4c38-98aa-4cf61ef61796",
+		"name": "LeaveMgmtSysAnand",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Leave application",
+			"item": [
+				{
+					"name": "Create Leave",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"employee\": 1,\r\n    \"description\":\"\",\r\n    \"leave_type\":4,\r\n    \"start_date\":\"2021-6-1\",\r\n    \"end_date\":\"2021-7-1\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/lms/leave_applications/",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_applications",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Leave by Employee id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_applications?emp_id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_applications"
+							],
+							"query": [
+								{
+									"key": "emp_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Leave By ManagerId",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_applications?mgr_id=2",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_applications"
+							],
+							"query": [
+								{
+									"key": "mgr_id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Leave by EmployeeId",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_applications?emp_id=1&leave_id=108&status=Cancelled",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_applications"
+							],
+							"query": [
+								{
+									"key": "emp_id",
+									"value": "1"
+								},
+								{
+									"key": "leave_id",
+									"value": "108"
+								},
+								{
+									"key": "status",
+									"value": "Cancelled"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update leave by ManagerId",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_applications?mgr_id=1&leave_id=238&status=Cancelled",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_applications"
+							],
+							"query": [
+								{
+									"key": "mgr_id",
+									"value": "1"
+								},
+								{
+									"key": "leave_id",
+									"value": "238"
+								},
+								{
+									"key": "status",
+									"value": "Cancelled"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Credit Leaves",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/credit_leaves/?leave_type_id=2&duration=10&financial_year=2021&description=Nothing",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"credit_leaves",
+								""
+							],
+							"query": [
+								{
+									"key": "leave_type_id",
+									"value": "2"
+								},
+								{
+									"key": "duration",
+									"value": "10"
+								},
+								{
+									"key": "financial_year",
+									"value": "2021"
+								},
+								{
+									"key": "description",
+									"value": "Nothing"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Leave balance",
+			"item": [
+				{
+					"name": "Get leave balance by mgr_id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_balances?mgr_id=2",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_balances"
+							],
+							"query": [
+								{
+									"key": "mgr_id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get leave balance by emp_id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Leave Credit History",
+			"item": [
+				{
+					"name": "Get leave credit history by emp_id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_credits?emp_id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_credits"
+							],
+							"query": [
+								{
+									"key": "emp_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Leave Credit History by mgr_id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_credits?mgr_id=1",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_credits"
+							],
+							"query": [
+								{
+									"key": "mgr_id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Holidays",
+			"item": [
+				{
+					"name": "Get Holidays",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/holidays",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"holidays"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Holiday",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"EID\",\r\n    \"date\":\"2021-02-02\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/lms/holidays",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"holidays"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Holiday",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\":\"New Year11\",\r\n    \"date\":\"2021-01-01\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/lms/holiday/5",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"holiday",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a Holiday",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/holiday/5",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"holiday",
+								"5"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Leave Types",
+			"item": [
+				{
+					"name": "Get Leave Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_types",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_types"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a Leave Type",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Party Leave\",\r\n    \"description\": \"When someone wants to party\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/lms/leave_types",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_types"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update a Leave Type",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"description\": \"This leave will be given to employees when they work on a non-working day\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8000/lms/leave_type/5",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_type",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a Leave Type",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8000/lms/leave_type/6",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"lms",
+								"leave_type",
+								"6"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

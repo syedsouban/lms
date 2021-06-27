@@ -10,6 +10,88 @@ from .jobs import schedule
 from django.db.models import F
 from leave_management.holiday_utils import get_num_working_days
 from .db import *
+from rest_framework.generics import *
+from rest_framework import status
+
+
+class HolidaysList(APIView):
+    def get(self, request, format=None):
+        holidays = Holidays.objects.all()
+        serializer = HolidaysSerializer(holidays, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = HolidaysSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HolidaysDetail(APIView):
+    def get_object(self, pk):
+        try:
+            return Holidays.objects.get(pk=pk)
+        except Holidays.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        holiday = self.get_object(pk)
+        serializer = HolidaysSerializer(holiday)
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        holiday = self.get_object(pk)
+        serializer = HolidaysSerializer(holiday, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        holiday = self.get_object(pk)
+        holiday.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class LeaveTypesList(APIView):
+    def get(self, request, format=None):
+        leave_types = LeaveTypes.objects.all()
+        serializer = LeaveTypesSerializer(leave_types, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = LeaveTypesSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LeaveTypesDetail(APIView):
+    def get_object(self, pk):
+        try:
+            return LeaveTypes.objects.get(pk=pk)
+        except LeaveTypes.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        leave_type = self.get_object(pk)
+        serializer = LeaveTypesSerializer(leave_type)
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        leave_type = self.get_object(pk)
+        serializer = LeaveTypesSerializer(leave_type, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        leave_type = self.get_object(pk)
+        leave_type.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class LeaveApplicationView(APIView):
     serializer_class = EmployeeLeaveApplicationSerializer
@@ -66,6 +148,7 @@ class LeaveApplicationView(APIView):
         leave_duration = get_num_working_days(leave.start_date, leave.end_date)
         balance = get_leave_balance_by_leave_type_and_emp_id(leave.leave_type_id, leave.employee_id)
         lop_leave = get_lop_leave_type()
+        res = None
         if leave.leave_type_id == lop_leave.leave_type_id:
             res = EmployeeLeaveApplication.objects.filter(pk = leave_id).update(status = status)
             if res:
@@ -117,6 +200,34 @@ class LeaveBalanceView(APIView):
             print(traceback.format_exc())
             return Response({"message":"Something went wrong"},status = 500)
 
+
+class LeaveCreditView(APIView):
+    
+    def get_queryset(self):
+        queryset = models.EmployeeLeaveCredit.objects.all()
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        try:
+            emp_id = request.query_params.get("emp_id")
+            mgr_id = request.query_params.get("mgr_id")
+            if not emp_id and not mgr_id:
+                return Response(status=409)
+            
+            if emp_id:
+                leave_credits = EmployeeLeaveCredit.objects.filter(employee = emp_id).select_related("employee").select_related("leave_type")
+                serializer = EmployeeLeaveCreditSerializer(leave_credits, many = True)
+                return Response(serializer.data)
+            elif mgr_id:
+                reportee_ids = Employee.objects.filter(manager=mgr_id).values('employee_id')
+                leave_credits = EmployeeLeaveCredit.objects.filter(employee_id__in=reportee_ids)
+                serializer = EmployeeLeaveCreditSerializer(leave_credits, many = True)
+                return Response(serializer.data)
+        except:
+            import traceback
+            print(traceback.format_exc())
+            return Response({"message":"Something went wrong"},status = 500)
+
 def credit_leaves(request):
     args = request.GET
     leave_type_id = args.get("leave_type_id")
@@ -129,13 +240,3 @@ def credit_leaves(request):
     p = Popen(f"python manage.py runscript credit_leaves --script-args ${leave_type_id} ${duration} ${financial_year} ${description}", shell=True)
     print(p)
     return HttpResponse("The script to credit leaves has been triggered! The HR will be notified once the process is completed")
-
-
-
-
-
-        
-            
-
-
-    
